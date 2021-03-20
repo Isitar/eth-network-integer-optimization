@@ -1,0 +1,285 @@
+\documentclass[12pt, a4]{article}
+\usepackage[margin=2cm]{geometry}
+\usepackage{parskip}
+\usepackage{nameref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{hyperref}
+\usepackage[tiny]{titlesec}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\renewcommand\qedsymbol{$\blacksquare$}
+
+\usepackage{fancyhdr}
+\usepackage{titling}
+
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.16}
+\usetikzlibrary{decorations.pathreplacing,positioning, shapes,arrows,chains}
+
+
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{fancyvrb}
+\usepackage{listings}
+\usepackage{bm}
+\usepackage{xcolor}
+\usepackage{optidef}
+
+\usepackage{pifont} % for cmark and xmark
+\newcommand{\cmark}{\ding{51}}%
+\newcommand{\xmark}{\ding{55}}%
+\newcommand{\checkedbox}{\rlap{$\square$}{\raisebox{2pt}{\hspace{1pt}\cmark}}}
+%\newcommand{\crossedBox}{\rlap{$\square$}{\large\hspace{1pt}\xmark}}
+
+
+\xdefinecolor{gray}{rgb}{0.4,0.4,0.4}
+\xdefinecolor{blue}{RGB}{58,95,205}
+\xdefinecolor{darkgreen}{RGB}{0,100,0}
+
+\newcommand{\lightgray}{black!30}
+
+\newcommand{\plotDomain}{-1:8}
+
+\newcommand{\addPlotLDownCoords}[1]{
+	\addplot[mark=none, domain=\plotDomain, color=\lightgray,
+	decoration={border,segment length=1mm,amplitude=1.5mm,angle=-135},
+	postaction={decorate}
+	] coordinates {#1};
+	\addplot[mark=none, domain=\plotDomain] coordinates {#1};
+}
+
+\newcommand{\addPlotLDown}[1]{
+	\addplot[mark=none, domain=\plotDomain, color=\lightgray,
+	decoration={border,segment length=1mm,amplitude=1.5mm,angle=-135},
+	postaction={decorate}
+	] {#1};
+	\addplot[mark=none, domain=\plotDomain] {#1};
+}
+
+\newcommand{\addPlotRUpCoords}[1]{
+	\addplot[mark=none, domain=\plotDomain, color=\lightgray,
+	decoration={border,segment length=1mm,amplitude=1.5mm,angle=135},
+	postaction={decorate}
+	] coordinates {#1};
+	\addplot[mark=none, domain=\plotDomain] coordinates {#1};
+}
+
+\newcommand{\addPlotRUp}[1]{
+	\addplot[mark=none, domain=\plotDomain, color=\lightgray,
+	decoration={border,segment length=1mm,amplitude=1.5mm,angle=135},
+	postaction={decorate}
+	] {#1};
+	\addplot[mark=none, domain=\plotDomain] {#1};
+}
+
+\lstset{% setup listings
+	language=R,% set programming language
+	basicstyle=\ttfamily\small,% basic font style
+	keywordstyle=\color{blue},% keyword style
+	commentstyle=\color{gray},% comment style
+	numbers=left,% display line numbers on the left side
+	numberstyle=\scriptsize,% use small line numbers
+	numbersep=10pt,% space between line numbers and code
+	tabsize=3,% sizes of tabs
+	showstringspaces=false,% do not replace spaces in strings by a certain character
+	captionpos=b,% positioning of the caption below
+	breaklines=true,% automatic line breaking
+	escapeinside={(*}{*)},% escaping to LaTeX
+	fancyvrb=true,% verbatim code is typset by listings
+	extendedchars=false,% prohibit extended chars (chars of codes 128--255)
+	literate={"}{{\texttt{"}}}1{<-}{{$\bm\leftarrow$}}1{<<-}{{$\bm\twoheadleftarrow$}}1
+	{~}{{$\bm\sim$}}1{<=}{{$\bm\le$}}1{>=}{{$\bm\ge$}}1{!=}{{$\bm\neq$}}1{^}{{$^{\bm\wedge}$}}1,% item to replace, text, length of chars
+	alsoletter={.<-},% becomes a letter
+	alsoother={$},% becomes other
+	otherkeywords={!=, ~, $, \&, \%/\%, \%*\%, \%\%, <-, <<-, /},% other keywords
+	deletekeywords={c}% remove keywords
+}
+
+\renewcommand{\arraystretch}{1.2} % more space in tables
+\renewcommand\thesubsection{\thesection.\alph{subsection}}
+\titleformat{\section}[hang]{\normalfont\bfseries\itshape}{\textup{\thesubsection}}{1em}{}
+
+\titleformat{\subsection}[hang]{\normalsize\itshape}{\textup{\thesubsection}}{1em}{}[]
+
+\newcommand{\norm}[1]{\lvert #1 \rvert}
+
+\newcolumntype{L}{>{$}l<{$}} % math-mode version of "l" column type
+\newcolumntype{R}{>{$}r<{$}} % math-mode version of "l" column type
+\newcolumntype{C}{>{$}c<{$}} % math-mode version of "l" column type
+
+\author{Pascal Lüscher}
+\title{Network \& Integer Optimization – Problem set 2.1}
+
+\makeatletter
+\let\mytitle\@title
+\makeatother
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{
+	\mytitle\\
+	\theauthor
+}
+
+\rfoot{
+	Page: \thepage
+}
+
+
+\newtheorem{definition}{Defintion}
+
+\begin{document}
+	\section{Problem 2.1: Night shift planning}
+	
+	\subsection{Design an efficient algorithm that decides whether there is a feasible assignment, and returns one if it exists. The running time of the algorithm should be in $O(n^c)$ for some constant $c\in\mathbb{Z}\geq0$. Prove that your algorithm is correct and that it obeys the required running time bound.}
+	
+	\subsubsection{algorithm and construction of the graph}
+	First we construct a graph using the information given as following:
+	
+	\begin{enumerate}
+		\item $s$ is the source, 
+		\item for each physicians create a node $p_i$ and connect $s$ to all $p_i$ with capacity $\infty$
+		\item for each physicians create nodes for each night-block (called $p_{i_{N_l}}$) and connect $p_i$ to $N_l$ with capacity $2$
+		\item for each night create a node $a_i$ and connect the corresponding $p_{i_{N_l}}$ to them with capacity $1$ if the physician $p_i$ is available on this night
+		\item create a node $t$ (sink) and connect all $a_i$ with capacity $2$
+	\end{enumerate}
+
+	An example of such a graph is given below. To get a better visual understanding, the night-blocks are colored.
+
+	\begin{figure}[h]
+		\centering
+		\scalebox{0.4}{
+		\begin{tikzpicture}[x=2.5cm, y=1.5cm, scale=1]
+			\begin{scope}[every node/.style={circle,thick,draw, minimum size=8mm}]
+				\node (s) at (0,0) {$s$};
+				\node (p1) at (1,2) {$p_1$};
+				\node (p2) at (1,0) {$p_2$};
+				\node (p3) at (1,-2) {$p_3$};			
+							
+				\node (p1n1)[blue] at (2,4) {$p_{1_{n_1}}$};
+				\node (p1n2)[darkgreen] at (2,3) {$p_{1_{n_2}}$};
+				\node (p1n3)[purple] at (2,2) {$p_{1_{n_3}}$};
+				
+				\node (p2n1)[blue] at (2.5,1) {$p_{2_{n_1}}$};
+				\node (p2n2)[darkgreen] at (2.5,0) {$p_{2_{n_2}}$};
+				\node (p2n3)[purple] at (2.5,-1) {$p_{2_{n_3}}$};
+				
+				
+				\node (p3n1)[blue] at (2,-2) {$p_{3_{n_1}}$};
+				\node (p3n2)[darkgreen] at (2,-3) {$p_{3_{n_2}}$};
+				\node (p3n3)[purple] at (2,-4) {$p_{3_{n_3}}$};
+				
+				
+				\node (a1)[blue] at (4,3) {$a_1$};
+				\node (a2)[blue] at (4,2) {$a_2$};
+				\node (a3)[darkgreen] at (4,1) {$a_3$};
+				\node (a4)[darkgreen] at (4,0) {$a_4$};
+				\node (a5)[purple] at (4,-1) {$a_5$};
+				\node (a6)[purple] at (4,-2) {$a_6$};
+				
+				\node (t) at (5,0) {$t$};
+			\end{scope}
+			\begin{scope}[every path/.style={thick,}]
+				\path (s)  
+					edge node[right]{$\infty$} (p1)
+					edge node[below]{$\infty$} (p2)
+					edge node[right]{$\infty$} (p3)
+					;
+				\path (p1)
+					edge node [right] {$2$} (p1n1)
+					edge node [right] {$2$} (p1n2)
+					edge node [right] {$2$} (p1n3)
+					;
+				\path (p2)
+					edge node [right] {$2$} (p2n1)
+					edge node [right] {$2$} (p2n2)
+					edge node [right] {$2$} (p2n3)
+					;
+				\path (p3)
+					edge node [right] {$2$} (p3n1)
+					edge node [right] {$2$} (p3n2)
+					edge node [right] {$2$} (p3n3)
+					;	
+					
+	
+				\begin{scope}[every path/.style={blue}]
+					\path (p1n1)
+						edge node [right] {$1$} (a1)
+						edge node [right] {$1$} (a2)
+						;
+					\path (p2n1)
+						edge node [right] {$0$} (a1)
+						edge node [right] {$1$} (a2)
+						;
+					\path (p3n1)
+						edge node [right] {$1$} (a1)
+						edge node [right] {$1$} (a2)
+						;
+				\end{scope}	
+						
+						
+				\begin{scope}[every path/.style={darkgreen}]
+					\path (p1n2)
+						edge node [right] {$1$} (a3)
+						edge node [right] {$0$} (a4)
+						;
+					\path (p2n2)
+						edge node [right] {$1$} (a3)
+						edge node [right] {$1$} (a4)
+						;
+					\path (p3n2)
+						edge node [right] {$1$} (a3)
+						edge node [right] {$1$} (a4)
+						;
+				\end{scope}	
+					
+					
+				\begin{scope}[every path/.style={purple}]
+					\path (p1n3)
+						edge node [right] {$1$} (a5)
+						edge node [right] {$1$} (a6)
+						;
+					\path (p2n3)
+						edge node [right] {$1$} (a5)
+						edge node [right] {$1$} (a6)
+						;
+					\path (p3n3)
+						edge node [right] {$1$} (a5)
+						edge node [right] {$0$} (a6)
+						;
+				\end{scope}
+					
+				\path (a1) edge node [right] {$2$} (t);
+				\path (a2) edge node [right] {$2$} (t);
+				\path (a3) edge node [right] {$2$} (t);
+				\path (a4) edge node [right] {$2$} (t);
+				\path (a5) edge node [right] {$2$} (t);
+				\path (a6) edge node [right] {$2$} (t);
+				
+			\end{scope}
+		\end{tikzpicture}
+		}
+	\end{figure}
+
+	We then apply the max s-t flow algorithm. 
+	\subsubsection{runtime analysis}	
+	Running time analysis for the graph construction steps:
+	\begin{enumerate}\itemsep-0.5em 
+		\item $O(1)$ 
+		\item $O(|P|)$
+		\item $O(|P|*l)$ ($l$ = number of night-blocks)
+		\item $O(|N|*l)$
+		\item $O(|N|)$
+	\end{enumerate}
+	The running time for the Edmonds-Karp s-t algorithm is $O(nm^2)$. We have $|P| + |P|\cdot l + |N| + 2$ nodes and 
+	$|P| + |P|\cdot l + l\cdot |N| + |N|$ edges.
+	Therefore our algorithm runs in polinomial time.
+	
+	\subsubsection{proof of correctness}
+	
+	
+\end{document}
